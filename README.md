@@ -1,8 +1,6 @@
 # ClipBridge Server
 
-ClipBridge Server is the self-hostable sync backend for ClipBridge clients.
-
-This first implementation is intentionally small: a Go HTTP API, bearer-token authentication, and a file-backed JSON store. The store is hidden behind an interface so the next step can swap in SQLite or PostgreSQL without changing the client protocol.
+ClipBridge Server is the open source cloud sync backend for ClipBridge clients. The primary runtime is now Cloudflare Workers with Cloudflare D1 storage, so the service can run as a small edge API without managing a VM.
 
 ## Status
 
@@ -11,44 +9,85 @@ Implemented:
 - `GET /healthz`
 - `POST /v1/clipboard/items`
 - `GET /v1/clipboard/items?since=<unix-seconds>`
-- Optional bearer token auth through `CLIPBRIDGE_TOKEN`
+- Optional bearer-token auth through the Worker secret `CLIPBRIDGE_TOKEN`
+- Cloudflare D1 persistence
 - Idempotent writes by clipboard item `id`
 - Incremental pull cursor through `nextSince`
 
 Planned:
 
-- SQLite/PostgreSQL storage
 - Tombstones for delete and clear propagation
 - Device registration
 - Client-side end-to-end encryption envelopes
-- OpenAPI contract and Docker image
+- OpenAPI contract
 
-## Run
+The original Go file-backed prototype is preserved in `legacy/go-file-server/` for reference, but new development should target the Worker implementation.
 
-```sh
-go run ./cmd/clipbridge-server
+## Project Layout
+
+```text
+.
+├── src/index.ts              # Worker HTTP API
+├── migrations/0001_initial.sql
+├── wrangler.jsonc            # Worker + D1 binding config
+├── docs/api.md
+├── docs/cloudflare.md
+└── legacy/go-file-server/    # archived Go prototype
 ```
 
-Environment variables:
+## Local Setup
 
-| Name | Default | Description |
-| --- | --- | --- |
-| `CLIPBRIDGE_ADDR` | `:8080` | HTTP listen address. |
-| `CLIPBRIDGE_DATA_PATH` | `data/clipbridge.json` | File-store path. |
-| `CLIPBRIDGE_TOKEN` | empty | When set, clients must send `Authorization: Bearer <token>`. |
-| `CLIPBRIDGE_MAX_BODY_BYTES` | `10485760` | Maximum JSON request body size. |
-
-Example:
+Install dependencies:
 
 ```sh
-CLIPBRIDGE_TOKEN=dev-token go run ./cmd/clipbridge-server
+npm install
+```
+
+Create a D1 database:
+
+```sh
+npm run db:create
+```
+
+Copy the `database_id` from Wrangler output into `wrangler.jsonc`, keeping the binding name as `DB`.
+
+Apply the schema locally:
+
+```sh
+npm run db:migrate:local
+```
+
+Run the Worker locally:
+
+```sh
+npm run dev
 ```
 
 Then configure the macOS client:
 
-- Server URL: `http://localhost:8080`
-- Access token: `dev-token`
+- Server URL: `http://localhost:8787`
+- Access token: empty, unless you set `CLIPBRIDGE_TOKEN`
+
+## Deploy
+
+Set an access token for production:
+
+```sh
+npx wrangler secret put CLIPBRIDGE_TOKEN
+```
+
+Apply the D1 migration remotely:
+
+```sh
+npm run db:migrate:remote
+```
+
+Deploy the Worker:
+
+```sh
+npm run deploy
+```
 
 ## API
 
-See [docs/api.md](docs/api.md).
+See [docs/api.md](docs/api.md). Cloudflare-specific setup notes are in [docs/cloudflare.md](docs/cloudflare.md).

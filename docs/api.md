@@ -1,10 +1,10 @@
 # ClipBridge Server API
 
-The server implements the first macOS client contract.
+The server implements the first macOS client sync contract. The current production runtime is Cloudflare Workers with D1, but the HTTP API is intentionally runtime-neutral.
 
 ## Authentication
 
-Set `CLIPBRIDGE_TOKEN` to require bearer authentication:
+Set the Worker secret `CLIPBRIDGE_TOKEN` to require bearer authentication:
 
 ```http
 Authorization: Bearer <token>
@@ -16,7 +16,7 @@ Clients also send a stable device identifier:
 X-ClipBridge-Device-ID: <device-id>
 ```
 
-The first API revision stores the clipboard payload shape produced by the macOS client. End-to-end encryption is still a planned client-side layer; the storage interface is intentionally narrow so encrypted envelopes can replace structured contents later.
+The first API revision stores the clipboard payload shape produced by the macOS client. End-to-end encryption is still a planned client-side layer; the storage table is intentionally narrow so encrypted envelopes can replace structured contents later.
 
 ## Health
 
@@ -65,7 +65,7 @@ Response:
 { "accepted": 1, "stored": 1, "nextSince": 1783764000.0 }
 ```
 
-`id` is treated as an idempotency key.
+`id` is treated as an idempotency key. If the same item is pushed again, the server updates the existing row and advances the sync cursor.
 
 ## Pull Clipboard Items
 
@@ -82,4 +82,4 @@ Response:
 }
 ```
 
-Clients store `nextSince` and use it as the next incremental pull cursor.
+Clients store `nextSince` and use it as the next incremental pull cursor. When no rows changed, `nextSince` may be omitted.
