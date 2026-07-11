@@ -1,0 +1,6 @@
+/clipbridge-server
+/data/
+*.db
+*.sqlite
+.env
+.DS_Store
