@@ -30,6 +30,25 @@ Response:
 { "ok": true }
 ```
 
+## Admin List
+
+```http
+GET /admin/items
+```
+
+The admin page renders a browser-readable table of synced clipboard rows from all devices. It includes source device IDs, applications, timestamps, content types, decoded text previews, and raw base64 values.
+
+If `CLIPBRIDGE_TOKEN` is configured, browsers authenticate with HTTP Basic Auth. Use any username and use the token as the password. API clients can also send the existing bearer token:
+
+```http
+Authorization: Bearer <token>
+```
+
+Optional query parameters:
+
+- `device=<source-device-id>` filters to one device.
+- `limit=<number>` controls the number of rows, capped at 500.
+
 ## Push Clipboard Items
 
 ```http

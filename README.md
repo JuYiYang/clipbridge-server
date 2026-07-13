@@ -9,6 +9,7 @@ Implemented:
 - `GET /healthz`
 - `POST /v1/clipboard/items`
 - `GET /v1/clipboard/items?since=<unix-seconds>`
+- `GET /admin/items`
 - Optional bearer-token auth through the Worker secret `CLIPBRIDGE_TOKEN`
 - Cloudflare D1 persistence
 - Idempotent writes by clipboard item `id`
@@ -67,6 +68,16 @@ Then configure the macOS client:
 
 - Server URL: `http://localhost:8787`
 - Access token: empty, unless you set `CLIPBRIDGE_TOKEN`
+
+Open the local admin list:
+
+```text
+http://localhost:8787/admin/items
+```
+
+If `CLIPBRIDGE_TOKEN` is configured, the browser will ask for Basic Auth credentials. Use any username, for example `clipbridge`, and use the token as the password.
+
+The page shows records from all devices, source device IDs, app names, timestamps, clipboard content types, decoded text previews, and raw base64 values.
 
 ## Deploy
 
