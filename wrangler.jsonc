@@ -10,7 +10,7 @@
     {
       "binding": "DB",
       "database_name": "clipbridge",
-      "database_id": "REPLACE_WITH_D1_DATABASE_ID",
+      "database_id": "17ded4be-7957-4710-97c5-77e569f84a9d",
       "migrations_dir": "migrations"
     }
   ]
