@@ -77,7 +77,9 @@ http://localhost:8787/admin/items
 
 If `CLIPBRIDGE_TOKEN` is configured, the browser will ask for Basic Auth credentials. Use any username, for example `clipbridge`, and use the token as the password.
 
-The page shows records from all devices, source device IDs, app names, timestamps, clipboard content types, decoded text previews, and raw base64 values.
+The page shows records from all devices, source device IDs, app names,
+timestamps, clipboard content types, decoded text previews, browser-previewable
+image thumbnails, and raw base64 values.
 
 ## Deploy
 

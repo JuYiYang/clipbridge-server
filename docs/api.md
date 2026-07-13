@@ -36,7 +36,7 @@ Response:
 GET /admin/items
 ```
 
-The admin page renders a browser-readable table of synced clipboard rows from all devices. It includes source device IDs, applications, timestamps, content types, decoded text previews, and raw base64 values.
+The admin page renders a browser-readable table of synced clipboard rows from all devices. It includes source device IDs, applications, timestamps, content types, decoded text previews, browser-previewable image thumbnails, and raw base64 values. PNG, JPEG, GIF, WebP, and SVG content types render inline; formats with inconsistent browser support, such as TIFF and HEIC, show format and size metadata.
 
 If `CLIPBRIDGE_TOKEN` is configured, browsers authenticate with HTTP Basic Auth. Use any username and use the token as the password. API clients can also send the existing bearer token:
 

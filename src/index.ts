@@ -474,6 +474,10 @@ function renderPage(title: string, body: string): string {
     summary { cursor: pointer; font-weight: 650; }
     .content { margin-top: 12px; display: grid; gap: 6px; }
     .content-type { font-size: 13px; font-weight: 700; overflow-wrap: anywhere; }
+    .image-preview { width: fit-content; max-width: 100%; border: 1px solid color-mix(in srgb, CanvasText 12%, transparent); border-radius: 8px; padding: 10px; background: color-mix(in srgb, CanvasText 4%, transparent); }
+    .image-preview img { display: block; max-width: min(420px, 100%); max-height: 320px; object-fit: contain; border-radius: 6px; background: #fff; }
+    .image-preview-unavailable { border: 1px dashed color-mix(in srgb, CanvasText 22%, transparent); border-radius: 8px; padding: 12px; color: color-mix(in srgb, CanvasText 64%, transparent); }
+    .content-note { margin: 0; font-size: 12px; color: color-mix(in srgb, CanvasText 54%, transparent); overflow-wrap: anywhere; }
     pre { margin: 0; max-height: 260px; overflow: auto; white-space: pre-wrap; overflow-wrap: anywhere; border-radius: 7px; padding: 10px; background: color-mix(in srgb, CanvasText 7%, transparent); }
     .id { margin: 12px 0 0; font-size: 12px; overflow-wrap: anywhere; }
     .empty { margin: 32px; padding: 32px; border: 1px solid color-mix(in srgb, CanvasText 12%, transparent); border-radius: 8px; }
@@ -582,12 +586,15 @@ function renderAdminRow(row: ClipboardItemRow): string {
 }
 
 function renderContent(content: ClipboardContent): string {
-  const decoded = decodeClipboardValue(content.value);
+  const type = content.type.trim();
+  const imageMime = imageMimeForType(type);
+  const imagePreview = imageMime ? renderImagePreview(content.value, imageMime) : "";
+  const decoded = imageMime ? null : decodeClipboardValue(content.value);
   return `
     <section class="content">
-      <div class="content-type">${escapeHtml(content.type)}</div>
-      <label>文本预览</label>
-      <pre>${escapeHtml(decoded.preview)}</pre>
+      <div class="content-type">${escapeHtml(type)}</div>
+      ${imagePreview}
+      ${decoded ? `<label>文本预览</label><pre>${escapeHtml(decoded.preview)}</pre>` : ""}
       <label>原始值 Base64</label>
       <pre>${escapeHtml(shorten(content.value, 4000))}</pre>
     </section>
@@ -638,6 +645,89 @@ function decodeClipboardValue(value: string): { preview: string } {
   }
 
   return { preview: "(binary or non-UTF-8 value)" };
+}
+
+function renderImagePreview(value: string, mime: string): string {
+  const normalized = normalizeBase64(value);
+  const size = base64ByteLength(normalized);
+  const sizeText = size === null ? "未知大小" : formatBytes(size);
+  if (!isBrowserPreviewableImage(mime) || !isValidBase64(normalized)) {
+    return `
+      <label>图片预览</label>
+      <div class="image-preview-unavailable">
+        <p class="content-note">${escapeHtml(mime)} · ${escapeHtml(sizeText)} · 当前浏览器可能无法直接预览此图片格式。</p>
+      </div>
+    `;
+  }
+
+  return `
+    <label>图片预览</label>
+    <figure class="image-preview">
+      <img src="data:${escapeHtml(mime)};base64,${normalized}" alt="Clipboard image preview" loading="lazy">
+    </figure>
+    <p class="content-note">${escapeHtml(mime)} · ${escapeHtml(sizeText)}</p>
+  `;
+}
+
+function imageMimeForType(type: string): string | null {
+  const normalized = type.toLowerCase();
+  const mappings: Record<string, string> = {
+    "image/png": "image/png",
+    "public.png": "image/png",
+    "com.apple.png": "image/png",
+    "image/jpeg": "image/jpeg",
+    "image/jpg": "image/jpeg",
+    "public.jpeg": "image/jpeg",
+    "public.jpg": "image/jpeg",
+    "image/gif": "image/gif",
+    "com.compuserve.gif": "image/gif",
+    "image/webp": "image/webp",
+    "org.webmproject.webp": "image/webp",
+    "image/svg+xml": "image/svg+xml",
+    "public.svg-image": "image/svg+xml",
+    "image/tiff": "image/tiff",
+    "public.tiff": "image/tiff",
+    "image/heic": "image/heic",
+    "public.heic": "image/heic",
+    "image/heif": "image/heif",
+    "public.heif": "image/heif",
+  };
+  return mappings[normalized] ?? null;
+}
+
+function isBrowserPreviewableImage(mime: string): boolean {
+  return new Set(["image/png", "image/jpeg", "image/gif", "image/webp", "image/svg+xml"]).has(mime);
+}
+
+function normalizeBase64(value: string): string {
+  return value.replace(/\s/g, "");
+}
+
+function isValidBase64(value: string): boolean {
+  return value.length > 0 && value.length % 4 === 0 && /^[A-Za-z0-9+/]+={0,2}$/.test(value);
+}
+
+function base64ByteLength(value: string): number | null {
+  if (!isValidBase64(value)) {
+    return null;
+  }
+  const padding = value.endsWith("==") ? 2 : value.endsWith("=") ? 1 : 0;
+  return (value.length / 4) * 3 - padding;
+}
+
+function formatBytes(value: number): string {
+  if (value < 1024) {
+    return `${value} B`;
+  }
+  const units = ["KB", "MB", "GB"];
+  let size = value / 1024;
+  for (const unit of units) {
+    if (size < 1024 || unit === units[units.length - 1]) {
+      return `${size.toFixed(size >= 10 ? 1 : 2)} ${unit}`;
+    }
+    size /= 1024;
+  }
+  return `${value} B`;
 }
 
 function isReadableText(value: string): boolean {
