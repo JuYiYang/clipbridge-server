@@ -101,6 +101,10 @@ Deploy the Worker:
 npm run deploy
 ```
 
+For a full dashboard-first guide, including D1 binding, schema setup, Worker
+secrets, client configuration, and GitHub auto deploy notes, see
+[docs/deployment.md](docs/deployment.md).
+
 ## API
 
 See [docs/api.md](docs/api.md). Cloudflare-specific setup notes are in [docs/cloudflare.md](docs/cloudflare.md).
